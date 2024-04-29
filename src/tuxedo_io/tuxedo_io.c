@@ -159,10 +159,10 @@ void uw_id_tdp(void)
 	} else if (dmi_match(DMI_PRODUCT_SKU, "PULSE1502")) {
 		tdp_min_defs = tdp_min_pfxluxg;
 		tdp_max_defs = tdp_max_pfxluxg;
-	} else if (dmi_match(DMI_PRODUCT_SKU, "POLARIS1XA02")) {
+	} else if (dmi_match(DMI_PRODUCT_SKU, "POLARIS1XA02") || dmi_match(DMI_PRODUCT_SKU, "XCO15AE21 / XCO17AE21")) {
 		tdp_min_defs = tdp_min_gmxngxx;
 		tdp_max_defs = tdp_max_gmxngxx;
-	} else if (dmi_match(DMI_PRODUCT_SKU, "POLARIS1XI02")) {
+	} else if (dmi_match(DMI_PRODUCT_SKU, "POLARIS1XI02") || dmi_match(DMI_PRODUCT_SKU, "XCO15IE21 / XCO17IE21")) {
 		tdp_min_defs = tdp_min_gmxmgxx;
 		tdp_max_defs = tdp_max_gmxmgxx;
 	} else if (dmi_match(DMI_PRODUCT_SKU, "POLARIS1XI03")
