@@ -129,17 +129,17 @@ static const struct x86_cpu_id force_tuxedo_dmi_string_check_match[] = {
 static const struct dmi_system_id tuxedo_dmi_string_match[] = {
 	{
 		.matches = {
-			DMI_MATCH(DMI_SYS_VENDOR, "TUXEDO"),
+			DMI_MATCH(DMI_SYS_VENDOR, "SchenkerTechnologiesGmbH"),
 		},
 	},
 	{
 		.matches = {
-			DMI_MATCH(DMI_BOARD_VENDOR, "TUXEDO"),
+			DMI_MATCH(DMI_BOARD_VENDOR, "NB02"),
 		},
 	},
 	{
 		.matches = {
-			DMI_MATCH(DMI_CHASSIS_VENDOR, "TUXEDO"),
+			DMI_MATCH(DMI_CHASSIS_VENDOR, "SchenkerTechnologiesGmbH"),
 		},
 	},
 	{ }
