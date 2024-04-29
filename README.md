@@ -1,3 +1,8 @@
+# Fork
+This is a for of the original repo
+Aim of this project is to add support for XMG/Schenker computers to the Tuxedo Software
+If you wish to contribute by submitting a dmi string, please open an Issue or a Pull Request
+
 # Table of Content
 - <a href="#description">Description</a>
 - <a href="#building">Building and Install</a>
