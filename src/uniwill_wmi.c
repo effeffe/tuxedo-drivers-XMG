@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2021 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/acpi.h>
 #include <linux/module.h>
@@ -249,7 +251,7 @@ static int uw_ec_write_addr_direct(u8 addr_low, u8 addr_high, u8 data_low, u8 da
 	return result;
 }
 
-int uw_wmi_read_ec_ram(u16 addr, u8 *data)
+static int uw_wmi_read_ec_ram(u16 addr, u8 *data)
 {
 	int result;
 	u8 addr_low, addr_high;
@@ -271,7 +273,7 @@ int uw_wmi_read_ec_ram(u16 addr, u8 *data)
 	return result;
 }
 
-int uw_wmi_write_ec_ram(u16 addr, u8 data)
+static int uw_wmi_write_ec_ram(u16 addr, u8 data)
 {
 	int result;
 	u8 addr_low, addr_high, data_low, data_high;

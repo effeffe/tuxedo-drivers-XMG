@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2020 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/acpi.h>
 #include <linux/module.h>
@@ -55,12 +57,12 @@ static int clevo_wmi_evaluate(u32 wmi_method_id, u32 wmi_arg, union acpi_object 
 	return return_status;
 }
 
-int clevo_wmi_interface_method_call(u8 cmd, u32 arg, union acpi_object **result_value)
+static int clevo_wmi_interface_method_call(u8 cmd, u32 arg, union acpi_object **result_value)
 {
 	return clevo_wmi_evaluate(cmd, arg, result_value);
 }
 
-int clevo_wmi_interface_method_call_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object **result_value)
+static int clevo_wmi_interface_method_call_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object **result_value)
 {
 	pr_info("%s: unsupported wmi method call; ignoring cmd 0x%02x; please use acpi interface\n",
 			__func__, cmd);

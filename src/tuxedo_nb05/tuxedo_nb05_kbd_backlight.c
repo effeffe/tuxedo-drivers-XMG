@@ -1,26 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2024 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/version.h>
+#include <linux/dmi.h>
 #include "tuxedo_nb05_kbd_backlight.h"
 #include "tuxedo_nb05_ec.h"
 
@@ -45,7 +48,12 @@ static void nb05_leds_set_brightness(struct led_classdev *led_cdev __always_unus
 	if (brightness < 0 || brightness > NB05_KBD_BRIGHTNESS_MAX_WHITE)
 		return;
 
-	nb05_write_ec_ram(0x0409, white_brightness_to_level_map[brightness]);
+	const struct dmi_system_id *sysid;
+	sysid = nb05_match_device();
+	if (!strcmp(sysid->ident, IFLX14I01))
+		nb05_write_ec_ram(0x03e2, white_brightness_to_level_map[brightness]);
+	else
+		nb05_write_ec_ram(0x0409, white_brightness_to_level_map[brightness]);
 }
 
 void nb05_leds_notify_brightness_change_extern(u8 step)
@@ -105,13 +113,19 @@ static int __init tuxedo_nb05_kbd_backlight_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int tuxedo_nb05_kbd_backlight_remove(struct platform_device *pdev)
+#else
+static void tuxedo_nb05_kbd_backlight_remove(struct platform_device *pdev)
+#endif
 {
 	struct driver_data_t *driver_data = dev_get_drvdata(&pdev->dev);
 	led_classdev_unregister(&driver_data->nb05_kbd_led_cdev);
 	__nb05_kbd_led_cdev = NULL;
 	pr_debug("driver remove\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
+#endif
 }
 
 static struct platform_device *tuxedo_nb05_kbd_backlight_device;

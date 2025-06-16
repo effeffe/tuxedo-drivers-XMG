@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
- * Copyright (c) 2023 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
+ * Copyright (c) 2023-2024 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/module.h>
@@ -27,6 +29,8 @@
 #include <asm/io.h>
 #include "tuxedo_nb05_ec.h"
 #include "../tuxedo_compatibility_check/tuxedo_compatibility_check.h"
+
+static struct nb05_ec_data_t ec_data;
 
 #define EC_PORT_ADDR	0x4e
 #define EC_PORT_DATA	0x4f
@@ -92,9 +96,22 @@ void nb05_write_ec_ram(u16 addr, u8 data)
 }
 EXPORT_SYMBOL(nb05_write_ec_ram);
 
+void nb05_read_ec_fw_version(u8 *major, u8 *minor)
+{
+	nb05_read_ec_ram(0x0400, major);
+	nb05_read_ec_ram(0x0401, minor);
+}
+EXPORT_SYMBOL(nb05_read_ec_fw_version);
+
 static int tuxedo_nb05_ec_probe(struct platform_device *pdev)
 {
-	pr_debug("driver probe\n");
+	u8 minor, major;
+
+	nb05_read_ec_fw_version(&major, &minor);
+	pr_info("EC I/O driver loaded, firmware version %d.%d\n", major, minor);
+
+	ec_data.ver_major = major;
+	ec_data.ver_minor = minor;
 
 	return 0;
 }
@@ -108,29 +125,74 @@ static struct platform_driver tuxedo_nb05_ec_driver = {
 
 static struct platform_device *tuxedo_nb05_ec_device;
 
-static int __init dmi_check_callback(const struct dmi_system_id *id)
+static int dmi_check_callback(const struct dmi_system_id *id)
 {
 	printk(KERN_INFO KBUILD_MODNAME ": found model '%s'\n", id->ident);
+	ec_data.dev_data = id->driver_data;
 	return 1;
 }
 
-static const struct dmi_system_id tuxedo_nb05_ec_id_table[] __initconst = {
+struct nb05_device_data_t data_pulse = {
+	.number_fans = 2,
+	.fanctl_onereg = false,
+};
+
+struct nb05_device_data_t data_infinityflex = {
+	.number_fans = 1,
+	.fanctl_onereg = true,
+};
+
+static const struct dmi_system_id tuxedo_nb05_id_table[] = {
 	{
-		.ident = "TUXEDO Pulse 14 Gen3",
+		.ident = PULSE1403,
 		.matches = {
 			DMI_MATCH(DMI_SYS_VENDOR, "TUXEDO"),
 			DMI_MATCH(DMI_BOARD_VENDOR, "NB05"),
 			DMI_MATCH(DMI_PRODUCT_SKU, "PULSE1403"),
 		},
 		.callback = dmi_check_callback,
+		.driver_data = &data_pulse,
+	},
+	{
+		.ident = PULSE1404,
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "TUXEDO"),
+			DMI_MATCH(DMI_BOARD_VENDOR, "NB05"),
+			DMI_MATCH(DMI_PRODUCT_SKU, "PULSE1404"),
+		},
+		.callback = dmi_check_callback,
+		.driver_data = &data_pulse,
+	},
+	{
+		.ident = IFLX14I01,
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "TUXEDO"),
+			DMI_MATCH(DMI_BOARD_VENDOR, "NB05"),
+			DMI_MATCH(DMI_PRODUCT_SKU, "IFLX14I01"),
+		},
+		.callback = dmi_check_callback,
+		.driver_data = &data_infinityflex,
 	},
 	{ },
 };
-MODULE_DEVICE_TABLE(dmi, tuxedo_nb05_ec_id_table);
+
+MODULE_DEVICE_TABLE(dmi, tuxedo_nb05_id_table);
+
+const struct dmi_system_id *nb05_match_device(void)
+{
+	return dmi_first_match(tuxedo_nb05_id_table);
+}
+EXPORT_SYMBOL(nb05_match_device);
+
+void nb05_get_ec_data(struct nb05_ec_data_t **ec_data_pp)
+{
+	*ec_data_pp = &ec_data;
+}
+EXPORT_SYMBOL(nb05_get_ec_data);
 
 static int __init tuxedo_nb05_ec_init(void)
 {
-	if (!dmi_check_system(tuxedo_nb05_ec_id_table))
+	if (!dmi_check_system(tuxedo_nb05_id_table))
 		return -ENODEV;
 
 	if (!tuxedo_is_compatible())

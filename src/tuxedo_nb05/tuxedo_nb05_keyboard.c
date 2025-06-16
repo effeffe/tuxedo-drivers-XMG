@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2023-2024 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/acpi.h>
 #include <linux/module.h>
@@ -34,6 +36,7 @@
 #define EVENT_STATUS_COMBO(event, status) (event | (status << 8)) 
 
 #define NB05_WMI_EVENT_TOUCHPAD_TOGGLE			0x02
+#define NB05_WMI_EVENT_KBD_BRT_CHANGE			0x03
 #define NB05_WMI_EVENT_KBD_BRT_MAX			0x07
 #define NB05_WMI_EVENT_KBD_BRT_MIDDLE			0x08
 #define NB05_WMI_EVENT_KBD_BRT_OFF			0x09
@@ -218,6 +221,9 @@ static void tuxedo_nb05_keyboard_notify(struct wmi_device *wdev, union acpi_obje
 			break;
 		case NB05_WMI_EVENT_KBD_BRT_OFF:
 			nb05_leds_notify_brightness_change_extern(0);
+			break;
+		case NB05_WMI_EVENT_KBD_BRT_CHANGE:
+			nb05_leds_notify_brightness_change_extern(device_status);
 			break;
 		default:
 			break;

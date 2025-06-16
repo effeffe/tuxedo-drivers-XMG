@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2020 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -125,7 +127,7 @@ static int clevo_acpi_evaluate_pkgbuf(struct acpi_device *device, u8 cmd, u8 *ar
 	return status;
 }
 
-int clevo_acpi_interface_method_call(u8 cmd, u32 arg, union acpi_object **result_value)
+static int clevo_acpi_interface_method_call(u8 cmd, u32 arg, union acpi_object **result_value)
 {
 	int status = 0;
 
@@ -141,7 +143,7 @@ int clevo_acpi_interface_method_call(u8 cmd, u32 arg, union acpi_object **result
 	return status;
 }
 
-int clevo_acpi_interface_method_call_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object **result_value)
+static int clevo_acpi_interface_method_call_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object **result_value)
 {
 	int status = 0;
 
@@ -199,7 +201,7 @@ static void clevo_acpi_remove(struct acpi_device *device)
 #endif
 }
 
-void clevo_acpi_notify(struct acpi_device *device, u32 event)
+static void clevo_acpi_notify(struct acpi_device *device, u32 event)
 {
 	u32 event_value;
 	union acpi_object *out_obj;
@@ -248,7 +250,9 @@ static const struct acpi_device_id clevo_acpi_device_ids[] = {
 static struct acpi_driver clevo_acpi_driver = {
 	.name = DRIVER_NAME,
 	.class = DRIVER_NAME,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	.owner = THIS_MODULE,
+#endif
 	.ids = clevo_acpi_device_ids,
 	.flags = ACPI_DRIVER_ALL_NOTIFY_EVENTS,
 	.ops = {

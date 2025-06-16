@@ -1,25 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
- * Copyright (c) 2023 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
+ * Copyright (c) 2023-2024 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/hwmon.h>
 #include <linux/platform_device.h>
+#include <linux/dmi.h>
 #include "tuxedo_nb05_ec.h"
 
 static int read_cpu_temp(void)
@@ -57,6 +60,7 @@ static const char * const fan_labels[] = {
 struct driver_data_t {
 	int fan_cpu_max;
 	int fan_cpu_min;
+	int number_fans;
 };
 
 struct driver_data_t driver_data;
@@ -65,7 +69,20 @@ static umode_t
 tuxedo_nb05_hwmon_is_visible(const void *drvdata, enum hwmon_sensor_types type,
 			     u32 attr, int channel)
 {
-	return 0444;
+	struct driver_data_t *driver_data = (struct driver_data_t *) drvdata;
+
+	switch (type) {
+	case hwmon_temp:
+		return 0444;
+	case hwmon_fan:
+		if (channel < driver_data->number_fans)
+			return 0444;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
 }
 
 static int
@@ -156,11 +173,23 @@ static const struct hwmon_chip_info tuxedo_nb05_hwmon_chip_info = {
 
 static int __init tuxedo_nb05_sensors_probe(struct platform_device *pdev) {
 	struct device *hwmon_dev;
+	const struct dmi_system_id *sysid;
 
 	pr_debug("driver_probe\n");
 
-	driver_data.fan_cpu_max=5000;
-	driver_data.fan_cpu_min=0;
+	sysid = nb05_match_device();
+	if (!sysid)
+		return -ENODEV;
+
+	driver_data.fan_cpu_min = 0;
+
+	if (!strcmp(sysid->ident, IFLX14I01)) {
+		driver_data.number_fans = 1;
+		driver_data.fan_cpu_max = 5600;
+	} else {
+		driver_data.number_fans = 2;
+		driver_data.fan_cpu_max = 5400;
+	}
 
 	hwmon_dev = devm_hwmon_device_register_with_info(&pdev->dev,
 							 "tuxedo",

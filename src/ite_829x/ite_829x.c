@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2019-2023 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -103,7 +105,7 @@ static int keyb_send_data(struct hid_device *dev, u8 cmd, u8 d0, u8 d1, u8 d2, u
 	return result;
 }
 
-void keyb_set_all(struct hid_device *dev, u8 color_red, u8 color_green, u8 color_blue)
+static void keyb_set_all(struct hid_device *dev, u8 color_red, u8 color_green, u8 color_blue)
 {
 	int row, col;
 	for (row = 0; row < KEYBOARD_ROWS; ++row) {
@@ -194,7 +196,7 @@ err_stop_hw:
 	return result;
 }
 
-void leds_set_brightness_mc(struct led_classdev *led_cdev, enum led_brightness brightness) {
+static void leds_set_brightness_mc(struct led_classdev *led_cdev, enum led_brightness brightness) {
 	int i, j;
 	struct led_classdev_mc *led_cdev_mc = lcdev_to_mccdev(led_cdev);
 
@@ -240,7 +242,7 @@ static void key_actions(unsigned long key_code)
 
 static volatile unsigned long last_key = 0;
 
-void ite_829x_key_work_handler(struct work_struct *work)
+static void ite_829x_key_work_handler(struct work_struct *work)
 {
 	key_actions(last_key);
 }
@@ -385,7 +387,7 @@ static int __init ite8291_init(void)
 
 	// Known not compatible/broken device, do not even load module
 	if (dmi_match(DMI_SYS_VENDOR, "TUXEDO") &&
-	    dmi_match(DMI_PRODUCT_SKU, "SIRIUS1601"))
+	    (dmi_match(DMI_PRODUCT_SKU, "SIRIUS1601") || dmi_match(DMI_PRODUCT_SKU, "SIRIUS1602")))
 		return -ENODEV;
 
 	mutex_init(&input_lock);

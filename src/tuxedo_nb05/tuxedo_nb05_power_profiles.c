@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2023-2024 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/acpi.h>
 #include <linux/module.h>
@@ -45,7 +47,7 @@ static struct wmi_device *__wmi_dev;
 
 static int rewrite_last_profile_internal(void);
 
-void nb05_rewrite_profile_work_handler(struct work_struct *work)
+static void nb05_rewrite_profile_work_handler(struct work_struct *work)
 {
 	rewrite_last_profile_internal();
 }
@@ -109,14 +111,13 @@ static int __nb05_wmi_aa_method(struct wmi_device *wdev, u32 wmi_method_id,
 	return 0;
 }
 
-int nb05_wmi_aa_method(u32 wmi_method_id, u64 *in, u64 *out)
+static int nb05_wmi_aa_method(u32 wmi_method_id, u64 *in, u64 *out)
 {
 	if (__wmi_dev)
 		return __nb05_wmi_aa_method(__wmi_dev, wmi_method_id, in, out);
 	else
 		return -ENODEV;
 }
-EXPORT_SYMBOL(nb05_wmi_aa_method);
 
 static int write_profile(u64 profile)
 {
@@ -226,7 +227,7 @@ static ssize_t platform_profile_show(struct device *dev,
 	return -EIO;
 }
 
-static int rewrite_last_profile_internal()
+static int rewrite_last_profile_internal(void)
 {
 	struct driver_data_t *driver_data = dev_get_drvdata(&__wmi_dev->dev);
 	u64 current_profile;
@@ -245,13 +246,13 @@ static int rewrite_last_profile_internal()
 	return 0;
 }
 
-void rewrite_last_profile()
+void rewrite_last_profile(void)
 {
 	schedule_work(&nb05_rewrite_profile_work);
 }
 EXPORT_SYMBOL(rewrite_last_profile);
 
-bool profile_changed_by_driver()
+bool profile_changed_by_driver(void)
 {
 	return profile_changed_by_driver_flag;
 }
@@ -356,7 +357,7 @@ static void tuxedo_nb05_power_profiles_remove(struct wmi_device *wdev)
 #endif
 {
 	pr_debug("driver remove\n");
-	del_timer(&profile_changed_timer);
+	timer_delete(&profile_changed_timer);
 	struct driver_data_t *driver_data = dev_get_drvdata(&wdev->dev);
 	sysfs_remove_group(&driver_data->pdev->dev.kobj, &platform_profile_attr_group);
 	platform_device_unregister(driver_data->pdev);

@@ -1,21 +1,23 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*!
  * Copyright (c) 2018-2020 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #ifndef CLEVO_KEYBOARD_H
 #define CLEVO_KEYBOARD_H
 
@@ -46,6 +48,8 @@
 #define CLEVO_EVENT_RFKILL2			0x86
 
 #define CLEVO_EVENT_GAUGE_KEY			0x59
+
+#define CLEVO_EVENT_FN_LOCK_TOGGLE		0x25
 
 #define CLEVO_KB_MODE_DEFAULT			0 // "CUSTOM"/Static Color
 
@@ -128,6 +132,10 @@ static struct kbd_backlight_mode_t {
         { .key = 7, .value = 0xB0000000, .name = "WAVE"}
 };
 
+// forward declaration
+static int clevo_acpi_fn_get(u8 *on, u8 *kbstatus1, u8 *kbstatus2);
+static int clevo_acpi_fn_lock_set(int on);
+
 int clevo_evaluate_method2(u8 cmd, u32 arg, union acpi_object **result)
 {
 	if (IS_ERR_OR_NULL(active_clevo_interface)) {
@@ -138,7 +146,7 @@ int clevo_evaluate_method2(u8 cmd, u32 arg, union acpi_object **result)
 }
 EXPORT_SYMBOL(clevo_evaluate_method2);
 
-int clevo_evaluate_method_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object **result)
+static int clevo_evaluate_method_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object **result)
 {
 	if (IS_ERR_OR_NULL(active_clevo_interface)) {
 		pr_err("clevo_keyboard: no active interface while attempting cmd %02x\n", cmd);
@@ -146,7 +154,6 @@ int clevo_evaluate_method_pkgbuf(u8 cmd, u8 *arg, u32 length, union acpi_object 
 	}
 	return active_clevo_interface->method_call_pkgbuf(cmd, arg, length, result);
 }
-EXPORT_SYMBOL(clevo_evaluate_method_pkgbuf);
 
 int clevo_evaluate_method(u8 cmd, u32 arg, u32 *result)
 {
@@ -279,6 +286,8 @@ static void clevo_send_cc_combo(void)
 
 static void clevo_keyboard_event_callb(u32 event)
 {
+	int err;
+	u8 on, kbstatus1, kbstatus2;
 	u32 key_event = event;
 
 	TUXEDO_DEBUG("Clevo event: %0#6x\n", event);
@@ -296,6 +305,18 @@ static void clevo_keyboard_event_callb(u32 event)
 			break;
 		case CLEVO_EVENT_KB_LEDS_CYCLE_BRIGHTNESS:
 			clevo_leds_notify_brightness_change_extern();
+			break;
+		case CLEVO_EVENT_FN_LOCK_TOGGLE:
+			err = clevo_acpi_fn_get(&on, &kbstatus1, &kbstatus2);
+			if (err) {
+				TUXEDO_ERROR("Error while reading ACPI fn lock; ignoring toggle request");
+			}
+			else {
+				if (on == 1)
+					clevo_acpi_fn_lock_set(0);
+				else
+					clevo_acpi_fn_lock_set(1);
+			}
 			break;
 		default:
 			break;
@@ -437,14 +458,17 @@ static ssize_t clevo_fn_lock_store(struct device *dev,
 	return size;
 }
 
-bool clevo_fn_lock_available(void){
+static bool clevo_fn_lock_available(void){
 	int err;
 	union acpi_object *out_obj;
 	u8 fnlock;
 
 	// no sysfs device for Aura Gen3 due to Fn Lock interference (via keyboard)
-	if (dmi_match(DMI_PRODUCT_SKU, "AURA14GEN3") ||
-	    dmi_match(DMI_PRODUCT_SKU, "AURA15GEN3"))
+	// but Aura Gen3 refresh (NL45AU2 und NL57AU) has working Fn Lock
+	if ((dmi_match(DMI_PRODUCT_SKU, "AURA14GEN3") ||
+	     dmi_match(DMI_PRODUCT_SKU, "AURA15GEN3")) &&
+	    (dmi_match(DMI_BOARD_NAME, "NL57PU") ||
+	     dmi_match(DMI_BOARD_NAME, "NL45PU2")))
 			return 0;
 
 	// check Fn lock for WMI
@@ -1000,12 +1024,18 @@ static void clevo_keyboard_remove_device_interface(struct platform_device *dev)
 	}
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int clevo_keyboard_remove(struct platform_device *dev)
+#else
+static void clevo_keyboard_remove(struct platform_device *dev)
+#endif
 {
 	clevo_flexicharger_remove();
 	clevo_keyboard_remove_device_interface(dev);
 	clevo_leds_remove(dev);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
+#endif
 }
 
 static int clevo_keyboard_suspend(struct platform_device *dev, pm_message_t state)

@@ -1,27 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2023 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/dmi.h>
+#include <linux/version.h>
 #include "tuxedo_nb04_wmi_bs.h"
 
 #define DEFAULT_PROFILE		WMI_SYSTEM_MODE_BEAST
@@ -214,13 +217,18 @@ static int __init tuxedo_nb04_power_profiles_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 static int tuxedo_nb04_power_profiles_remove(struct platform_device *pdev)
+#else
+static void tuxedo_nb04_power_profiles_remove(struct platform_device *pdev)
+#endif
 {
 	pr_debug("driver remove\n");
 	struct driver_data_t *driver_data = dev_get_drvdata(&pdev->dev);
 	sysfs_remove_group(&driver_data->pdev->dev.kobj, &platform_profile_attr_group);
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
+#endif
 }
 
 static struct platform_device *tuxedo_nb04_power_profiles_device;

@@ -1,21 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*!
  * Copyright (c) 2023 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -109,7 +111,7 @@ static void color_scaling(struct hid_device *hdev, u8 *red, u8 *green, u8 *blue)
 	} else if (dmi_match(DMI_PRODUCT_SKU, "STELLARIS17I06") && hdev->product == 0x6010) {
 		*green = (100 * *green) / 255;
 		*blue = (100 * *blue) / 255;
-	}
+	} 
 #endif
 }
 
@@ -209,6 +211,16 @@ static int ite8291_write_lightbar_mono(struct hid_device *hdev, u8 red, u8 green
 	case 0x7000:
 		ite8291_write_control(hdev, (u8[]){ 0x14, 0x01, 0x01, red, green, blue, 0x00, 0x00 });
 		ite8291_write_control(hdev, (u8[]){ 0x08, 0x21, 0x01, 0x01, brightness, 0x01, 0x00, 0x00 });
+		break;
+
+	case 0x7001:
+		if (dmi_match(DMI_PRODUCT_SKU, "STELLARIS16I07")) {
+			// swap mapping of green and blue
+			ite8291_write_control(hdev, (u8[]){ 0x14, 0x00, 0x01, red, blue, green, 0x00, 0x00 });
+		} else {
+			ite8291_write_control(hdev, (u8[]){ 0x14, 0x00, 0x01, red, green, blue, 0x00, 0x00 });
+		}
+		ite8291_write_control(hdev, (u8[]){ 0x08, 0x22, 0x01, 0x01, brightness, 0x01, 0x00, 0x00 });
 		break;
 
 	default:
@@ -450,7 +462,7 @@ static int ite8291_write_state(struct hid_device *hdev)
 					   ite8291_driver_data->mcled_cdev_lightbar.led_cdev.brightness);
 }
 
-void leds_set_brightness_mc_lightbar(struct led_classdev *led_cdev, enum led_brightness brightness) {
+static void leds_set_brightness_mc_lightbar(struct led_classdev *led_cdev, enum led_brightness brightness) {
 	struct device *dev = led_cdev->dev->parent;
 	struct hid_device *hdev = to_hid_device(dev);
 
@@ -609,6 +621,7 @@ static int driver_reset_resume_callb(struct hid_device *hdev)
 static const struct hid_device_id ite8291_device_table[] = {
 	{ HID_USB_DEVICE(0x048d, 0x6010) },
 	{ HID_USB_DEVICE(0x048d, 0x7000) },
+	{ HID_USB_DEVICE(0x048d, 0x7001) },
 	{ }
 };
 MODULE_DEVICE_TABLE(hid, ite8291_device_table);

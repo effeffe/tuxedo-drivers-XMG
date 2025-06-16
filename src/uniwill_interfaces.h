@@ -1,21 +1,23 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*!
  * Copyright (c) 2021-2024 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-drivers.
  *
- * tuxedo-drivers is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * This software is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, see <https://www.gnu.org/licenses/>.
  */
+
 #ifndef UNIWILL_INTERFACES_H
 #define UNIWILL_INTERFACES_H
 
@@ -65,6 +67,9 @@ typedef void (uniwill_event_callb_t)(u32);
 
 #define UW_EC_REG_KBD_FN_LOCK_STATUS_BIT		0x074e
 
+#define UW_EC_REG_AC_AUTO_BOOT_STATUS			0x0726
+#define UW_EC_REG_USB_POWERSHARE_STATUS			0x0767
+
 #define UW_EC_REG_FAN_CTRL_STATUS			0x078e
 #define UW_EC_REG_FAN_CTRL_STATUS_BIT_HAS_UW_FAN_CTRL	0x40
 
@@ -89,7 +94,8 @@ typedef void (uniwill_event_callb_t)(u32);
 
 #define UW_EC_REG_FEATURES_0				0x0765
 #define UW_EC_REG_FEATURES_1				0x0766
-#define UW_EC_REG_FEATURES_1_BIT_1_ZONE_RGB_KB		0x04
+#define UW_EC_REG_FEATURES_1_BIT_1_ZONE_RGB_KB		BIT(2)
+#define UW_EC_REG_FEATURES_1_BIT_FIXED_COLOR_5_ENABLE	BIT(5)
 
 #define UW_EC_REG_ROMID_START				0x0770
 #define UW_EC_REG_ROMID_SPECIAL_1			0x077e
@@ -132,13 +138,16 @@ struct uniwill_device_features_t {
 	bool uniwill_profile_v1_three_profs;
 	bool uniwill_profile_v1_three_profs_leds_only;
 	/*
-	 * Identifies devices where "custom" profile (0x00) need to be chosen
-	 * for custom TDP values to have effect
+	 * Identifies devices where mode need to be chosen
+	 * for custom TDP values (and sometimes fan control) to have effect
 	 */
-	bool uniwill_profile_custom_change_tdp_only;
+	bool uniwill_custom_profile_mode_needed;
 	bool uniwill_has_charging_prio;
 	bool uniwill_has_charging_profile;
 	bool uniwill_has_universal_ec_fan_control;
+	bool uniwill_has_double_pl4;
+	bool uniwill_has_ac_auto_boot;	
+	bool uniwill_has_usb_powershare;
 };
 
 struct uniwill_device_features_t *uniwill_get_device_features(void);
